@@ -1,0 +1,6 @@
+export(stockSim)
+export(dt_growth_soVB)
+export(logisticSelect)
+export(gillnet)
+export(srrBH)
+export(pmat_w)
