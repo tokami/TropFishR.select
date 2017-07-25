@@ -551,6 +551,9 @@ res$growthpars <- list(
     ## fisheries dependent information
     ## if fisheries are simulated
     if(any(!is.na(fished_t) & !is.nan(fished_t))){
+      if(length(harvest_rate) == 1){
+        harvest_rate <- rep(harvest_rate, length(fished_t))
+      }
         res$fisheries <- list(
             fished_years = yeardec2date( date2yeardec(timemin.date) + fished_t), ## yeardec2date( date2yeardec(timemin.date) + (timeseq - timemin)) [fished_t],
             E = Emat,
