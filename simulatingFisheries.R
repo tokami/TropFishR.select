@@ -20,19 +20,21 @@ require(TropFishR.select)
 #' 
 #' The function *stockSim* allows you to simulate a fish stock with certain life history traits and simulate one to several fishing fleets with specific selectivity characteristics. Important arguments of the function which will be changed in this exercise are:
 #' The mean asymptotic length (Linf)
-Linf.mu = 80
+Linf.mu = 93.5
 #' The coefficient of variation of Linf
 Linf.cv = 0.1
 #' The mean growth coefficient
-K.mu = 0.5
+K.mu = 0.2
 #' The coefficient of variation of K
 K.cv = 0.1
 #' The summer point of seasonalised VBGF
 ts = 0
+
+t0 = 0.28
 #' The amplitude of seasonalised VBGF
 C = 0
 #' The natural mortality
-M = 0.7
+M = 0.4
 #' The time where fishery is active (reduced to one year due to convenience in catch curve analysis, important that the simulation model is in equilibrium)
 fished_t = seq(18,19,1/12)
 #' The fishing effort (can be matrix for several fleets)
@@ -40,17 +42,19 @@ Etf = 500
 #' The catchability coefficient (can be matrix for several fleets)
 qtf = 0.001
 #' The fishing mortality (or harvest rate, has to be NaN is effort and catchability should be used to estimate F)
-harvest_rate = NaN
+harvest_rate = 0.76 ## c(0.5, 0.26) ##
 #' The gear types (so far trawl or gillnet, can be a vector for several fleets)
-gear_types = "trawl"
+gear_types = c("trawl")
 #' The list with parameters defining selectivity curve (more information in functions gillnet and logisticSelect)
-sel_list = list(mesh_size=100, mesh_size1=60,select_dist="lognormal",select_p1=3, select_p2=0.5)  # parameters from the tilapia data set
-#' L50 parameter of selectivity curve
-(L50 = 0.25*Linf.mu)
-#' The spread of selectivity curve (L75 - L25)
-(wqs = L50*0.2)
+sel_list = NULL ## list(mesh_size=18.6, mesh_size1=60,select_dist="gamma",select_p1=3, select_p2=0.5)  # parameters from the tilapia data set
+#' L50 parameter of trawl-like selectivity curve
+L50 = 55
+#' The spread of trawl-like selectivity curve (L75 - L25)
+wqs = 7.2 * 2
+#' L75 parameter of trawl-like selectivity curve
 (L75 = L50 + wqs/2)
-
+#' The length at first maturity
+Lmat = 63.4
 
 #' The model can then be run with these predefined parameters.
 ex1 <- stockSim(Linf.mu = Linf.mu, 
@@ -67,7 +71,8 @@ ex1 <- stockSim(Linf.mu = Linf.mu,
                 sel_list = sel_list,
                 L50 = L50,
                 wqs = wqs, 
-                fished_t = fished_t,
+                fished_t = fished_t, 
+                Lmat = Lmat,
                 progressBar = FALSE)
 
 
@@ -78,7 +83,7 @@ plot(as.Date(ex1$fisheries$fished_years, "%Y-%m-%d"), ex1$fisheries$F,
      xlab = "Year", ylab = "F", lwd=2,col=4)
 
 #' ### Selectivity characteristics
-Lt = seq(0,Linf.mu,0.01)
+Lt = seq(0,Linf.mu+20,0.01)
 pt1 <-  logisticSelect(Lt,L50,wqs) * 100
 plot(Lt,pt1,type="l", col = 'blue',lwd=2,
      main = "Selectivity curve",
@@ -93,10 +98,10 @@ plot(ex1$lfqbin, Fname = "catch")
 #' modify lfq data and add true growth parameters
 ex1mod <- lfqModify(ex1$lfqbin, 
                     par = list(Linf = Linf.mu, K = K.mu, t0 = 0), 
-                    vectorise_catch = TRUE, bin_size = 2)
+                    vectorise_catch = TRUE, bin_size = 4)
 
 #' apply catch curve analysis
-res1 <- catchCurve(ex1mod, catch_columns = 1, reg_int = c(10, 35), calc_ogive = TRUE)
+res1 <- catchCurve(ex1mod, catch_columns = 1, reg_int = c(16, 23), calc_ogive = TRUE)
 
 #' compare selectiviy curves
 par(mfrow=c(1,1))
