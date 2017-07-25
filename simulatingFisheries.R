@@ -36,7 +36,9 @@ C = 0
 #' The natural mortality
 M = 0.4
 #' The time where fishery is active (reduced to one year due to convenience in catch curve analysis, important that the simulation model is in equilibrium)
-fished_t = seq(18,19,1/12)
+fished_t = seq(0,35,1/12)
+timemin.date = as.Date("1980-01-01")
+timemax = 35
 #' The fishing effort (can be matrix for several fleets)
 Etf = 500
 #' The catchability coefficient (can be matrix for several fleets)
@@ -72,6 +74,8 @@ ex1 <- stockSim(Linf.mu = Linf.mu,
                 L50 = L50,
                 wqs = wqs, 
                 fished_t = fished_t, 
+                timemin.date = timemin.date,
+                timemax = timemax,
                 Lmat = Lmat,
                 progressBar = FALSE)
 
@@ -91,17 +95,21 @@ plot(Lt,pt1,type="l", col = 'blue',lwd=2,
 
 
 #' ### Catch curve analysis
+lfqdat <- ex1$lfqbin
+#' subsample data for 2014
+lfqdat$catch <- lfqdat$catch[,which(format(lfqdat$dates, "%Y") %in% "2014")]
+lfqdat$dates <- lfqdat$dates[format(lfqdat$dates, "%Y") %in% "2014"]
 #' convert data list to lfq class
-class(ex1$lfqbin) <- "lfq"
+class(lfqdat) <- "lfq"
 #' plot LFQ data
-plot(ex1$lfqbin, Fname = "catch")
+plot(lfqdat, Fname = "catch")
 #' modify lfq data and add true growth parameters
-ex1mod <- lfqModify(ex1$lfqbin, 
-                    par = list(Linf = Linf.mu, K = K.mu, t0 = 0), 
+ex1mod <- lfqModify(lfqdat, 
+                    par = list(Linf = Linf.mu, K = K.mu, t0 = t0), 
                     vectorise_catch = TRUE, bin_size = 4)
 
 #' apply catch curve analysis
-res1 <- catchCurve(ex1mod, catch_columns = 1, reg_int = c(16, 23), calc_ogive = TRUE)
+res1 <- catchCurve(ex1mod, reg_int = c(14, 20), calc_ogive = TRUE)
 
 #' compare selectiviy curves
 par(mfrow=c(1,1))
