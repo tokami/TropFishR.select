@@ -168,38 +168,44 @@ fished_t = seq(17,20,tincr),
 lfqFrac = 1,
 progressBar = TRUE
 ){
+  ## Fishing mortality - effort - catchability
 
-    ## Fishing mortality - effort - catchability
+  ## if E == single value, assuming one fleet and same effort for all fished years
+  if(length(as.numeric(Etf))==1){
+      Emat <- as.matrix(rep(Etf,length(fished_t)))
+  }
+  ## if E == matrix, rows = years and columns = fleets
+  if(class(Etf) == "matrix"){
+      Emat <- Etf
+  }else if(length(Etf)>1){
+      Emat <- as.matrix(Etf)
+  }
 
-    ## if E == single value, assuming one fleet and same effort for all fished years
-    if(length(as.numeric(Etf))==1){
-        Emat <- as.matrix(rep(Etf,length(fished_t)))
-    }
-    ## if E == matrix, rows = years and columns = fleets
-    if(class(Etf) == "matrix"){
-        Emat <- Etf
-    }else if(length(Etf)>1){
-        Emat <- as.matrix(Etf)
-    }
+  ## adapt q to Emat
+  if(length(qtf)==1){
+      qmat <- matrix(qtf, ncol=dim(Emat)[2], nrow=dim(Emat)[1])
+  }
+  if(class(qtf) == "matrix"){
+      if(dim(qtf)[1] != dim(Emat)[1]){
+          qmat <- matrix(rep(qft[1,], dim(Emat)[1]),ncol=dim(qft)[2],byrow=TRUE)
+      }else{
+          qmat <- qtf
+      }
+  }else if(length(qtf)>1){
+      qmat <- as.matrix(qtf)
+  }
 
-    ## adapt q to Emat
-    if(length(qtf)==1){
-        qmat <- matrix(qtf, ncol=dim(Emat)[2], nrow=dim(Emat)[1])
+  ## If no harvest_rate provided assuming that effort * catchability = fishing mortality
+  if(is.na(harvest_rate[1]) | is.nan(harvest_rate[1])){
+      harvest_rate <- Emat * qmat
+  }else{ ## harvest_rate always matrix!!!
+    if(length(harvest_rate) == 1){
+      harvest_rate <- matrix(harvest_rate, ncol=length(gear_types), nrow=length(fished_t))
+    }else{
+      harvest_rate <- matrix(rep(harvest_rate,length(fished_t)), ncol=length(gear_types),byrow=TRUE)
     }
-    if(class(qtf) == "matrix"){
-        if(dim(qtf)[1] != dim(Emat)[1]){
-            qmat <- matrix(rep(qft[1,], dim(Emat)[1]),ncol=dim(qft)[2],byrow=TRUE)
-        }else{
-            qmat <- qtf
-        }
-    }else if(length(qtf)>1){
-        qmat <- as.matrix(qtf)
-    }
-
-    ## If no harvest_rate provided assuming that effort * catchability = fishing mortality
-    if(is.na(harvest_rate) | is.nan(harvest_rate)){
-        harvest_rate <- Emat * qmat
-    }
+  }
+  
 
     selfunc <- function(Lt, fleetNo){
         if(is.na(fleetNo)){
@@ -219,7 +225,7 @@ progressBar = TRUE
                    pSel <- logisticSelect(Lt=Lt, L50=L50X, wqs=wqsX)},
                gillnet={
                    if(!is.na(fleetNo)){
-                       sel_listX <- sel_list[[fleet_No]]
+                       sel_listX <- sel_list[[fleetNo]]
                    }
                    pSel <- do.call(fishdynr::gillnet, c(list(Lt=Lt),sel_listX))
                },
